@@ -1,0 +1,55 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat</title>
+    <script src="https://cdn.socket.io/4.4.0/socket.io.min.js"></script>
+</head>
+<body>
+    <h1>Welcome, {{ username }}!</h1>
+    <div id="messageArea" style="border:1px solid #ccc; height:400px; overflow-y:auto;"></div>
+    <input id="messageInput" type="text" placeholder="Type your message here..."/>
+    <button id="sendMessage">Send</button>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', (event) => {
+            const socket = io.connect('http://' + document.domain + ':' + location.port);
+
+            const username = "{{ username }}"; // Flask template variable
+            const room = 'general'; // Example room name
+
+            // Join the room
+            socket.emit('join', {username: username, room: room});
+
+            // Send a message
+            document.getElementById('sendMessage').addEventListener('click', () => {
+                const message = document.getElementById('messageInput').value;
+                socket.emit('message', {username: username, room: room, message: message});
+                document.getElementById('messageInput').value = '';
+            });
+
+            // Receive messages
+            socket.on('message', (data) => {
+                const messageArea = document.getElementById('messageArea');
+                messageArea.innerHTML += `<p><strong>${data.username}:</strong> ${data.message}</p>`;
+                messageArea.scrollTop = messageArea.scrollHeight; // Auto-scroll to bottom
+            });
+
+            // Handle user joining and leaving
+            socket.on('join', (data) => {
+                const messageArea = document.getElementById('messageArea');
+                messageArea.innerHTML += `<p><em>${data.username} has joined the room.</em></p>`;
+                messageArea.scrollTop = messageArea.scrollHeight;
+            });
+
+            socket.on('leave', (data) => {
+                const messageArea = document.getElementById('messageArea');
+                messageArea.innerHTML += `<p><em>${data.username} has left the room.</em></p>`;
+                messageArea.scrollTop = messageArea.scrollHeight;
+            });
+        });
+    </script>
+</body>
+</html>
